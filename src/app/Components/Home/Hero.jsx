@@ -18,7 +18,7 @@ const slides = [
     description: "Discover the latest trends in street fashion with our exclusive summer drop.",
     image: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=2070",
     buttonText: "Shop Now",
-    accent: "text-[#14B8A6]" // Teal
+    accent: "text-[#14B8A6]" 
   },
   {
     id: 2,
@@ -27,7 +27,7 @@ const slides = [
     description: "Premium quality basics designed for the modern lifestyle.",
     image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070",
     buttonText: "Explore Collection",
-    accent: "text-[#E11D48]" // Rose
+    accent: "text-[#E11D48]" 
   }
 ];
 
@@ -45,7 +45,7 @@ const Hero = () => {
         {slides.map((slide) => (
           <SwiperSlide key={slide.id}>
             <div className="relative w-full h-full flex items-center">
-              {/* Background Image with Overlay */}
+             
               <div 
                 className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] scale-105"
                 style={{ backgroundImage: `url(${slide.image})` }}
@@ -53,7 +53,7 @@ const Hero = () => {
                 <div className="absolute inset-0 bg-black/30" />
               </div>
 
-              {/* Content Container */}
+              
               <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-12 w-full">
                 <div className="max-w-2xl text-white">
                   <motion.p 
@@ -99,7 +99,7 @@ const Hero = () => {
         ))}
       </Swiper>
 
-      {/* Custom Styles for Swiper Pagination */}
+     
       <style jsx global>{`
         .swiper-pagination-bullet {
           background: white !important;
