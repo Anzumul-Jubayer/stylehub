@@ -1,26 +1,23 @@
 @import "tailwindcss";
+ @plugin "daisyui" {
+   themes: light --default;
+ }
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@plugin "daisyui/theme" {
+  name: "light";
+  default: true;
+
+  /* Modern Clothing Store Colors */
+  --color-primary: #4F46E5;    /* Indigo - Buttons, Links */
+  --color-secondary: #14B8A6;  /* Teal - Secondary elements */
+  --color-accent: #E11D48;     /* Rose - CTA, Highlights */
+  --color-neutral: #FAFAFA;    /* Background */
+  --color-base-100: #FFFFFF;    /* Card / Section BG */
+  --color-info: #3B82F6;        /* Info / badges */
+  --color-success: #10B981;     /* Success messages */
+  --color-warning: #F59E0B;     /* Warning messages */
+  --color-error: #EF4444;       /* Error messages */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+@custom-variant dark (&:where([data-theme=night], [data-theme=night] *));
