@@ -213,7 +213,28 @@ const authOptions = {
   // Add error handling
   events: {
     async error(message) {
-      console.error('NextAuth error:', message);
+      console.error('NextAuth error event:', message);
+    },
+    async signIn(message) {
+      console.log('NextAuth signIn event:', message);
+    },
+    async signOut(message) {
+      console.log('NextAuth signOut event:', message);
+    }
+  },
+
+  // Enable debug logging in production for troubleshooting
+  logger: {
+    error(code, metadata) {
+      console.error('NextAuth error:', code, metadata);
+    },
+    warn(code) {
+      console.warn('NextAuth warning:', code);
+    },
+    debug(code, metadata) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('NextAuth debug:', code, metadata);
+      }
     }
   }
 };
