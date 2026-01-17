@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { TrendingUp } from 'lucide-react';
 
 const TrendingProductCard = ({ product, index }) => {
   const { _id, name, price, image, category } = product;
@@ -28,8 +29,9 @@ const TrendingProductCard = ({ product, index }) => {
             
             {/* Trending Badge */}
             <div className="absolute top-4 left-4">
-              <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
-                🔥 Trending
+              <span className="bg-gradient-to-r from-pink-500 to-rose-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg flex items-center space-x-1">
+                <TrendingUp className="w-3 h-3" />
+                <span>Trending</span>
               </span>
             </div>
 

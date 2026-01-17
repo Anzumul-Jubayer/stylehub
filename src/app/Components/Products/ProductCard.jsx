@@ -1,10 +1,13 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Eye, ArrowRight } from 'lucide-react';
 
 const ProductCard = ({ product }) => {
   const {
+    _id,
     name,
     description,
     price,
@@ -23,34 +26,46 @@ const ProductCard = ({ product }) => {
       className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
     >
       {/* Product Image */}
-      <div className="relative h-64 overflow-hidden">
-        <Image
-          src={image || '/placeholder-product.jpg'}
-          alt={name}
-          fill
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-        />
-        {!inStock && (
-          <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <span className="text-white font-semibold text-lg">Out of Stock</span>
+      <Link href={`/products/${_id}`} className="block">
+        <div className="relative h-64 overflow-hidden">
+          <Image
+            src={image || '/placeholder-product.jpg'}
+            alt={name}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+          />
+          {!inStock && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+              <span className="text-white font-semibold text-lg">Out of Stock</span>
+            </div>
+          )}
+          {category && (
+            <div className="absolute top-3 left-3">
+              <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                {category}
+              </span>
+            </div>
+          )}
+          
+          {/* Hover Overlay */}
+          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full text-sm font-semibold text-gray-900 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex items-center space-x-2">
+              <Eye className="w-4 h-4" />
+              <span>Quick View</span>
+            </div>
           </div>
-        )}
-        {category && (
-          <div className="absolute top-3 left-3">
-            <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-              {category}
-            </span>
-          </div>
-        )}
-      </div>
+        </div>
+      </Link>
 
       {/* Product Info */}
       <div className="p-4">
         <div className="mb-2">
-          <h3 className="font-semibold text-lg text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors">
-            {name}
-          </h3>
+          <Link href={`/products/${_id}`}>
+            <h3 className="font-semibold text-lg text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors cursor-pointer">
+              {name}
+            </h3>
+          </Link>
           {brand && (
             <p className="text-sm text-gray-500 font-medium">{brand}</p>
           )}
@@ -83,16 +98,20 @@ const ProductCard = ({ product }) => {
             )}
           </div>
 
-          <button
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              inStock
-                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-            disabled={!inStock}
-          >
-            {inStock ? 'Add to Cart' : 'Unavailable'}
-          </button>
+          <Link href={`/products/${_id}`}>
+            <button
+              className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center space-x-2 ${
+                inStock
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-105'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+              disabled={!inStock}
+            >
+              <Eye className="w-4 h-4" />
+              <span>{inStock ? 'View Details' : 'Unavailable'}</span>
+              {inStock && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+            </button>
+          </Link>
         </div>
       </div>
     </motion.div>

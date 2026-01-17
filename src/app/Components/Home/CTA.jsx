@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ShoppingBag, ArrowRight } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
 
 const CTA = () => {
   return (
@@ -50,16 +50,35 @@ const CTA = () => {
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex flex-col sm:flex-row gap-4 items-center"
           >
-            <Link 
-              href="/shop" 
-              className="group bg-white text-[#E11D48] px-10 py-5 rounded-full font-bold text-xl inline-flex items-center gap-3 shadow-2xl hover:bg-[#4F46E5] hover:text-white transition-all duration-300"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              Shop the Collection
-              <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-            </Link>
+              <Link 
+                href="/products" 
+                className="group bg-white text-[#E11D48] px-8 py-4 rounded-2xl font-bold text-lg inline-flex items-center gap-3 shadow-2xl hover:bg-[#4F46E5] hover:text-white transition-all duration-300"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                Shop All Collection
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
+            
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link 
+                href="/new-arrivals" 
+                className="group bg-white/20 backdrop-blur-sm text-white border-2 border-white/30 px-8 py-4 rounded-2xl font-bold text-lg inline-flex items-center gap-3 hover:bg-white hover:text-[#E11D48] transition-all duration-300"
+              >
+                <Sparkles className="w-5 h-5" />
+                New Arrivals
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
           </motion.div>
           
           <p className="mt-6 text-rose-200 text-sm font-medium">

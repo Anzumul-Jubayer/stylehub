@@ -1,51 +1,62 @@
-import { notFound } from 'next/navigation';
+'use client';
+
+import { use } from 'react';
+import { useProductDetails } from '@/hooks/useProductDetails';
+import ProductDetails from '@/app/Components/ProductDetails/ProductDetails';
+import ProductDetailsLoading from '@/app/Components/ProductDetails/ProductDetailsLoading';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 
-// This is a placeholder page - you can expand this later
 export default function ProductDetailPage({ params }) {
-  return (
-    <main className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back Button */}
-        <Link 
-          href="/products"
-          className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-8 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Products
-        </Link>
+  const resolvedParams = use(params);
+  const { product, loading, error } = useProductDetails(resolvedParams.id);
 
-        {/* Placeholder Content */}
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Product Detail Page
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Product ID: {params.id}
-          </p>
-          <p className="text-gray-500">
-            This is a placeholder page. You can expand this to show detailed product information,
-            images, reviews, and purchase options.
-          </p>
-          
-          <div className="mt-8">
+  if (loading) {
+    return <ProductDetailsLoading />;
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center p-8">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-8 h-8 text-red-600" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="space-y-3">
             <Link
               href="/products"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center justify-center w-full px-6 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition-colors"
             >
-              Browse All Products
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Products
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center w-full px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Go to Homepage
             </Link>
           </div>
         </div>
-      </div>
+      </main>
+    );
+  }
+
+  if (!product) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Product not found</h1>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <ProductDetails product={product} />
     </main>
   );
-}
-
-export async function generateMetadata({ params }) {
-  return {
-    title: `Product ${params.id} - StyleHub`,
-    description: 'Product details page for StyleHub clothing store.',
-  };
 }
