@@ -53,10 +53,17 @@ const authOptions = {
       }
     }),
 
-    // Google Provider
+    // Google Provider with enhanced configuration
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
+      }
     })
   ],
 
@@ -100,10 +107,27 @@ const authOptions = {
     },
 
     async redirect({ url, baseUrl }) {
-      // Redirect to products page after successful login
-      if (url.startsWith('/')) return `${baseUrl}/products`;
-      if (new URL(url).origin === baseUrl) return url;
-      return `${baseUrl}/products`;
+      // Handle both development and production URLs
+      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+      
+      // If it's a relative URL, make it absolute
+      if (url.startsWith('/')) {
+        return `${productionUrl}/products`;
+      }
+      
+      // If it's the same origin, allow it
+      try {
+        const urlObj = new URL(url);
+        const baseUrlObj = new URL(productionUrl);
+        if (urlObj.origin === baseUrlObj.origin) {
+          return url;
+        }
+      } catch (error) {
+        console.error('URL parsing error:', error);
+      }
+      
+      // Default redirect to products page
+      return `${productionUrl}/products`;
     }
   },
 
@@ -114,40 +138,41 @@ const authOptions = {
 
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: process.env.NODE_ENV === 'production' 
+        ? '__Secure-next-auth.session-token'
+        : 'next-auth.session-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        // Don't set domain in production to avoid subdomain issues
-        domain: process.env.NODE_ENV === 'production' ? undefined : 
-                (process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).hostname : undefined),
       },
     },
     callbackUrl: {
-      name: `next-auth.callback-url`,
+      name: process.env.NODE_ENV === 'production'
+        ? '__Secure-next-auth.callback-url'
+        : 'next-auth.callback-url',
       options: {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? undefined : 
-                (process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).hostname : undefined),
       },
     },
     csrfToken: {
-      name: `next-auth.csrf-token`,
+      name: process.env.NODE_ENV === 'production'
+        ? '__Host-next-auth.csrf-token'
+        : 'next-auth.csrf-token',
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? undefined : 
-                (process.env.NEXTAUTH_URL ? new URL(process.env.NEXTAUTH_URL).hostname : undefined),
       },
     },
   },
 
+  // Enhanced security for production
+  useSecureCookies: process.env.NODE_ENV === 'production',
   secret: process.env.NEXTAUTH_SECRET
 };
 

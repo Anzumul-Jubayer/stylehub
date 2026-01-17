@@ -8,6 +8,17 @@
       "maxDuration": 30
     }
   },
+  "headers": [
+    {
+      "source": "/api/auth/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ],
   "build": {
     "env": {
       "NODE_OPTIONS": "--max-old-space-size=8192",

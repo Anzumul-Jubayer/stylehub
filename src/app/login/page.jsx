@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, Globe, User, UserCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { showToast } from '@/utils/toast';
+import OAuthErrorHandler from '@/app/Components/Auth/OAuthErrorHandler';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -88,17 +89,48 @@ function LoginForm() {
     try {
       // Set flag for products page to show welcome toast
       sessionStorage.setItem('justLoggedIn', 'true');
+      
       // For Google OAuth, we let NextAuth handle the redirect
-      await signIn('google', {
-        callbackUrl: '/products'
+      const result = await signIn('google', {
+        callbackUrl: '/products',
+        redirect: false
       });
       
-      // Note: Success handling will be done on the products page
-      // since Google OAuth redirects to a new page
-      showToast.dismiss(loadingToast);
+      if (result?.error) {
+        showToast.dismiss(loadingToast);
+        console.error('Google OAuth error:', result.error);
+        
+        // Handle specific OAuth errors
+        if (result.error === 'OAuthCallback') {
+          toast.error('Google authentication failed. Please check your configuration.', {
+            duration: 5000,
+            style: {
+              background: '#EF4444',
+              color: '#fff',
+              borderRadius: '12px',
+              padding: '16px',
+            },
+          });
+        } else {
+          showToast.googleError();
+        }
+        setError('Google authentication failed. Please try again.');
+      } else if (result?.url) {
+        // Successful OAuth initiation
+        showToast.dismiss(loadingToast);
+        window.location.href = result.url;
+      } else {
+        // Fallback - let NextAuth handle the redirect
+        showToast.dismiss(loadingToast);
+        await signIn('google', {
+          callbackUrl: '/products'
+        });
+      }
     } catch (error) {
       showToast.dismiss(loadingToast);
+      console.error('Google sign-in error:', error);
       showToast.googleError();
+      setError('An error occurred during Google sign-in. Please try again.');
     }
   };
 
@@ -116,6 +148,7 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <OAuthErrorHandler />
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"></div>
