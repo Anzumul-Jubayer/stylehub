@@ -19,7 +19,7 @@ export async function GET(request, { params }) {
     }
 
     // Connect to products collection
-    const productsCollection = dbConnect('products');
+    const productsCollection = await dbConnect('products');
 
     // Fetch the specific product
     const product = await productsCollection.findOne({ _id: new ObjectId(id) });

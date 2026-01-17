@@ -4,13 +4,21 @@ import { dbConnect } from '@/lib/db-connect';
 
 export async function GET(request) {
   try {
+    // Check if MongoDB URI is available
+    if (!process.env.MONGODB_URI) {
+      return NextResponse.json({
+        success: false,
+        error: 'Database configuration missing'
+      }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 8;
     const skip = (page - 1) * limit;
 
     // Connect to products collection
-    const productsCollection = dbConnect('products');
+    const productsCollection = await dbConnect('products');
 
     // Get total count for pagination
     const totalProducts = await productsCollection.countDocuments();
@@ -86,7 +94,7 @@ export async function POST(request) {
     }
 
     // Connect to products collection
-    const productsCollection = dbConnect('products');
+    const productsCollection = await dbConnect('products');
 
     // Create new product object
     const newProduct = {

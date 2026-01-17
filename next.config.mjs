@@ -22,6 +22,12 @@ const nextConfig = {
       }
     ],
   },
+  // Use Turbopack configuration instead of webpack
+  turbopack: {},
+  // Optimize build performance
+  experimental: {
+    optimizeCss: false, // Disable CSS optimization that might be causing issues
+  },
 };
 
 export default nextConfig;

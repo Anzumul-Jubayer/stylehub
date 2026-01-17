@@ -9,7 +9,7 @@ export async function GET(request) {
     const skip = (page - 1) * limit;
 
     // Connect to products collection
-    const productsCollection = dbConnect('products');
+    const productsCollection = await dbConnect('products');
 
     // Get total count for pagination
     const totalProducts = await productsCollection.countDocuments();

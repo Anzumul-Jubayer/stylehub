@@ -4,7 +4,7 @@ import { dbConnect } from '@/lib/db-connect';
 export async function GET() {
   try {
     // Connect to products collection
-    const productsCollection = dbConnect('products');
+    const productsCollection = await dbConnect('products');
 
     // Fetch products for special offers (you can modify this logic)
     // For now, we'll get some products and simulate discount data

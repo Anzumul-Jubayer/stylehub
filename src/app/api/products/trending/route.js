@@ -4,7 +4,7 @@ import { dbConnect } from '@/lib/db-connect';
 export async function GET() {
   try {
     // Connect to products collection
-    const productsCollection = dbConnect('products');
+    const productsCollection = await dbConnect('products');
 
     // Fetch 4 trending products (you can modify this logic based on your criteria)
     // For now, we'll get the first 4 products, but you could sort by popularity, sales, etc.
