@@ -31,25 +31,30 @@ const authOptions = {
         password: { label: 'Password', type: 'password' }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          // Find user in mock database
+          const user = mockUsers.find(
+            u => u.email === credentials.email && u.password === credentials.password
+          );
+
+          if (user) {
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              role: user.role
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error('Credentials authorization error:', error);
           return null;
         }
-
-        // Find user in mock database
-        const user = mockUsers.find(
-          u => u.email === credentials.email && u.password === credentials.password
-        );
-
-        if (user) {
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role
-          };
-        }
-
-        return null;
       }
     }),
 
@@ -63,6 +68,15 @@ const authOptions = {
           access_type: "offline",
           response_type: "code"
         }
+      },
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          role: 'user' // Default role for Google OAuth users
+        }
       }
     })
   ],
@@ -73,61 +87,82 @@ const authOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (user) {
-        token.role = user.role || 'user';
-        // For Google OAuth users, set default role
-        if (account?.provider === 'google') {
-          token.role = 'user';
+    async jwt({ token, user, account, profile }) {
+      try {
+        if (user) {
+          token.role = user.role || 'user';
+          // For Google OAuth users, set default role
+          if (account?.provider === 'google') {
+            token.role = 'user';
+          }
         }
+        return token;
+      } catch (error) {
+        console.error('JWT callback error:', error);
+        return token;
       }
-      return token;
     },
 
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub;
-        session.user.role = token.role;
+      try {
+        if (token) {
+          session.user.id = token.sub;
+          session.user.role = token.role;
+        }
+        return session;
+      } catch (error) {
+        console.error('Session callback error:', error);
+        return session;
       }
-      return session;
     },
 
-    async signIn({ user, account, profile }) {
-      // Allow all credential logins (handled by authorize function)
-      if (account?.provider === 'credentials') {
-        return true;
+    async signIn({ user, account, profile, email, credentials }) {
+      try {
+        // Allow all credential logins (handled by authorize function)
+        if (account?.provider === 'credentials') {
+          return true;
+        }
+        
+        // Allow Google OAuth logins
+        if (account?.provider === 'google') {
+          // Additional validation can be added here
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('SignIn callback error:', error);
+        return false;
       }
-      
-      // Allow Google OAuth logins
-      if (account?.provider === 'google') {
-        return true;
-      }
-      
-      return false;
     },
 
     async redirect({ url, baseUrl }) {
-      // Handle both development and production URLs
-      const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
-      
-      // If it's a relative URL, make it absolute
-      if (url.startsWith('/')) {
-        return `${productionUrl}/products`;
-      }
-      
-      // If it's the same origin, allow it
       try {
-        const urlObj = new URL(url);
-        const baseUrlObj = new URL(productionUrl);
-        if (urlObj.origin === baseUrlObj.origin) {
-          return url;
+        // Handle both development and production URLs
+        const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+        
+        // If it's a relative URL, make it absolute
+        if (url.startsWith('/')) {
+          return `${productionUrl}/products`;
         }
+        
+        // If it's the same origin, allow it
+        try {
+          const urlObj = new URL(url);
+          const baseUrlObj = new URL(productionUrl);
+          if (urlObj.origin === baseUrlObj.origin) {
+            return url;
+          }
+        } catch (urlError) {
+          console.error('URL parsing error:', urlError);
+        }
+        
+        // Default redirect to products page
+        return `${productionUrl}/products`;
       } catch (error) {
-        console.error('URL parsing error:', error);
+        console.error('Redirect callback error:', error);
+        return `${baseUrl}/products`;
       }
-      
-      // Default redirect to products page
-      return `${productionUrl}/products`;
     }
   },
 
@@ -173,7 +208,14 @@ const authOptions = {
 
   // Enhanced security for production
   useSecureCookies: process.env.NODE_ENV === 'production',
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
+
+  // Add error handling
+  events: {
+    async error(message) {
+      console.error('NextAuth error:', message);
+    }
+  }
 };
 
 const handler = NextAuth(authOptions);

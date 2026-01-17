@@ -38,24 +38,35 @@ export default function DebugOAuth() {
           </div>
         </div>
 
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4 text-red-800">🚨 Current Issue: 500 Internal Server Error</h2>
+          <p className="text-red-700 mb-4">
+            The redirect URI is now correct, but there's a server error in the OAuth callback.
+          </p>
+          <div className="text-sm text-red-600">
+            <p><strong>Error URL:</strong> https://stylehub-plmi.vercel.app/api/auth/callback/google</p>
+            <p><strong>Status:</strong> 500 Internal Server Error</p>
+          </div>
+        </div>
+
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4 text-yellow-800">Google Cloud Console Setup</h2>
+          <h2 className="text-xl font-semibold mb-4 text-yellow-800">Google Cloud Console Setup ✅</h2>
           <p className="text-yellow-700 mb-4">
-            Add these EXACT URLs to your Google Cloud Console OAuth 2.0 Client:
+            Use these EXACT URLs in your Google Cloud Console OAuth 2.0 Client:
           </p>
           
           <div className="space-y-4">
             <div>
               <h3 className="font-medium text-yellow-800">Authorized JavaScript Origins:</h3>
               <code className="bg-yellow-100 p-2 rounded text-sm block text-yellow-900">
-                {debugInfo.currentURL}
+                https://stylehub-plmi.vercel.app
               </code>
             </div>
             
             <div>
               <h3 className="font-medium text-yellow-800">Authorized Redirect URIs:</h3>
               <code className="bg-yellow-100 p-2 rounded text-sm block text-yellow-900">
-                {debugInfo.expectedRedirectURI}
+                https://stylehub-plmi.vercel.app/api/auth/callback/google
               </code>
             </div>
           </div>
@@ -64,21 +75,41 @@ export default function DebugOAuth() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4 text-blue-800">Vercel Environment Variables</h2>
           <p className="text-blue-700 mb-4">
-            Set this in your Vercel dashboard → Settings → Environment Variables:
+            Ensure these are set in Vercel Dashboard → Settings → Environment Variables:
           </p>
           
-          <div>
-            <h3 className="font-medium text-blue-800">NEXTAUTH_URL:</h3>
-            <code className="bg-blue-100 p-2 rounded text-sm block text-blue-900">
-              {debugInfo.currentURL}
-            </code>
+          <div className="space-y-3">
+            <div>
+              <h3 className="font-medium text-blue-800">NEXTAUTH_URL:</h3>
+              <code className="bg-blue-100 p-2 rounded text-sm block text-blue-900">
+                https://stylehub-plmi.vercel.app
+              </code>
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-800">NEXTAUTH_SECRET:</h3>
+              <code className="bg-blue-100 p-2 rounded text-sm block text-blue-900">
+                your-strong-production-secret-here
+              </code>
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-800">GOOGLE_CLIENT_ID:</h3>
+              <code className="bg-blue-100 p-2 rounded text-sm block text-blue-900">
+                your-google-client-id-from-console
+              </code>
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-800">GOOGLE_CLIENT_SECRET:</h3>
+              <code className="bg-blue-100 p-2 rounded text-sm block text-blue-900">
+                your-google-client-secret-from-console
+              </code>
+            </div>
           </div>
         </div>
 
         <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4 text-green-800">Test OAuth</h2>
+          <h2 className="text-xl font-semibold mb-4 text-green-800">Test OAuth (After Fixes)</h2>
           <p className="text-green-700 mb-4">
-            After updating Google Console and Vercel settings:
+            After updating environment variables and redeploying:
           </p>
           <a 
             href="/login" 
