@@ -20,26 +20,8 @@ const mockUsers = [
   }
 ];
 
-// Ensure we have the correct base URL for production
-const getBaseUrl = () => {
-  if (process.env.NEXTAUTH_URL) {
-    return process.env.NEXTAUTH_URL;
-  }
-  
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  return process.env.NODE_ENV === 'production' 
-    ? 'https://stylehub-plmi.vercel.app' 
-    : 'http://localhost:3000';
-};
-
-const baseUrl = getBaseUrl();
-console.log('NextAuth Base URL:', baseUrl);
-
 const authOptions = {
-  debug: true, // Enable debug for production troubleshooting
+  debug: true,
   
   providers: [
     // Credentials Provider for mock login
@@ -51,10 +33,13 @@ const authOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log('Credentials authorize called:', { email: credentials?.email });
+          console.log('🔐 Credentials authorize called:', { 
+            email: credentials?.email,
+            hasPassword: !!credentials?.password 
+          });
           
           if (!credentials?.email || !credentials?.password) {
-            console.log('Missing credentials');
+            console.log('❌ Missing credentials');
             return null;
           }
 
@@ -64,7 +49,11 @@ const authOptions = {
           );
 
           if (user) {
-            console.log('User found:', { id: user.id, email: user.email, role: user.role });
+            console.log('✅ User found:', { 
+              id: user.id, 
+              email: user.email, 
+              role: user.role 
+            });
             return {
               id: user.id,
               email: user.email,
@@ -73,16 +62,16 @@ const authOptions = {
             };
           }
 
-          console.log('User not found');
+          console.log('❌ User not found for email:', credentials.email);
           return null;
         } catch (error) {
-          console.error('Credentials authorization error:', error);
+          console.error('💥 Credentials authorization error:', error);
           return null;
         }
       }
     }),
 
-    // Google Provider with explicit configuration
+    // Google Provider
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -104,32 +93,33 @@ const authOptions = {
   callbacks: {
     async jwt({ token, user, account }) {
       try {
-        console.log('JWT callback:', { 
+        console.log('🎫 JWT callback:', { 
           hasUser: !!user, 
           provider: account?.provider,
+          userEmail: user?.email,
           tokenSub: token?.sub 
         });
         
         if (user) {
           token.role = user.role || 'user';
-          // For Google OAuth users, set default role
           if (account?.provider === 'google') {
             token.role = 'user';
           }
         }
         return token;
       } catch (error) {
-        console.error('JWT callback error:', error);
+        console.error('💥 JWT callback error:', error);
         return token;
       }
     },
 
     async session({ session, token }) {
       try {
-        console.log('Session callback:', { 
+        console.log('📋 Session callback:', { 
           hasSession: !!session, 
           hasToken: !!token,
-          tokenSub: token?.sub 
+          tokenSub: token?.sub,
+          sessionEmail: session?.user?.email
         });
         
         if (token) {
@@ -138,70 +128,68 @@ const authOptions = {
         }
         return session;
       } catch (error) {
-        console.error('Session callback error:', error);
+        console.error('💥 Session callback error:', error);
         return session;
       }
     },
 
     async signIn({ user, account }) {
       try {
-        console.log('SignIn callback:', { 
+        console.log('🚪 SignIn callback:', { 
           provider: account?.provider, 
           userEmail: user?.email,
           accountType: account?.type 
         });
 
-        // Allow all credential logins (handled by authorize function)
         if (account?.provider === 'credentials') {
-          console.log('Credentials login successful');
+          console.log('✅ Credentials login approved');
           return true;
         }
         
-        // Allow Google OAuth logins
         if (account?.provider === 'google') {
-          console.log('Google OAuth login successful:', user?.email);
+          console.log('✅ Google OAuth login approved');
           return true;
         }
         
-        console.log('Unknown provider:', account?.provider);
+        console.log('❌ Unknown provider:', account?.provider);
         return false;
       } catch (error) {
-        console.error('SignIn callback error:', error);
+        console.error('💥 SignIn callback error:', error);
         return false;
       }
     },
 
-    async redirect({ url, baseUrl: callbackBaseUrl }) {
+    async redirect({ url, baseUrl }) {
       try {
-        console.log('Redirect callback:', { 
+        console.log('🔄 Redirect callback:', { 
           url, 
-          callbackBaseUrl, 
-          configuredBaseUrl: baseUrl,
-          NEXTAUTH_URL: process.env.NEXTAUTH_URL 
+          baseUrl,
+          NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+          NODE_ENV: process.env.NODE_ENV
         });
         
-        // Use our configured base URL
-        const redirectBase = baseUrl;
+        // Use NEXTAUTH_URL if available, otherwise use baseUrl
+        const redirectBase = process.env.NEXTAUTH_URL || baseUrl;
         
-        // If it's a relative URL, make it absolute and redirect to products
+        // If it's a relative URL, redirect to products
         if (url.startsWith('/')) {
           const redirectUrl = `${redirectBase}/products`;
-          console.log('Redirecting to:', redirectUrl);
+          console.log('✅ Redirecting to:', redirectUrl);
           return redirectUrl;
         }
         
         // If it's the same origin, allow it
         if (url.startsWith(redirectBase)) {
-          console.log('Same origin redirect:', url);
+          console.log('✅ Same origin redirect:', url);
           return url;
         }
         
         // Default redirect to products page
         const defaultUrl = `${redirectBase}/products`;
-        console.log('Default redirect to:', defaultUrl);
+        console.log('✅ Default redirect to:', defaultUrl);
         return defaultUrl;
       } catch (error) {
-        console.error('Redirect callback error:', error);
+        console.error('💥 Redirect callback error:', error);
         return `${baseUrl}/products`;
       }
     }
@@ -212,6 +200,7 @@ const authOptions = {
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
+  // Simplified cookie configuration
   cookies: {
     sessionToken: {
       name: process.env.NODE_ENV === 'production' 
@@ -224,66 +213,31 @@ const authOptions = {
         secure: process.env.NODE_ENV === 'production',
       },
     },
-    callbackUrl: {
-      name: process.env.NODE_ENV === 'production'
-        ? '__Secure-next-auth.callback-url'
-        : 'next-auth.callback-url',
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    csrfToken: {
-      name: process.env.NODE_ENV === 'production'
-        ? '__Host-next-auth.csrf-token'
-        : 'next-auth.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
   },
 
-  // Explicitly set the secret and base URL
   secret: process.env.NEXTAUTH_SECRET,
-  
-  // Force the base URL for production
-  ...(process.env.NODE_ENV === 'production' && {
-    url: baseUrl
-  }),
 
-  // Consolidated event handling with detailed logging
   events: {
     async error(message) {
-      console.error('NextAuth error event:', message);
+      console.error('💥 NextAuth error event:', message);
     },
     async signIn(message) {
-      console.log('NextAuth signIn event:', message);
+      console.log('✅ NextAuth signIn event:', message);
     },
     async signOut(message) {
-      console.log('NextAuth signOut event:', message);
-    },
-    async createUser(message) {
-      console.log('NextAuth createUser event:', message);
-    },
-    async session(message) {
-      console.log('NextAuth session event:', message);
+      console.log('👋 NextAuth signOut event:', message);
     }
   },
 
-  // Enhanced logging for production debugging
   logger: {
     error(code, metadata) {
-      console.error('NextAuth error:', code, metadata);
+      console.error('💥 NextAuth error:', code, metadata);
     },
     warn(code) {
-      console.warn('NextAuth warning:', code);
+      console.warn('⚠️ NextAuth warning:', code);
     },
     debug(code, metadata) {
-      console.log('NextAuth debug:', code, metadata);
+      console.log('🐛 NextAuth debug:', code, metadata);
     }
   }
 };

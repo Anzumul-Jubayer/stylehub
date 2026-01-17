@@ -98,6 +98,58 @@ export default function TestOAuth() {
     setLogs([]);
   };
 
+  const testCredentials = async () => {
+    addLog('Testing demo credentials...', 'info');
+    
+    const testCreds = [
+      { email: 'admin@stylehub.com', password: 'admin123', role: 'admin' },
+      { email: 'user@stylehub.com', password: 'user123', role: 'user' }
+    ];
+    
+    for (const cred of testCreds) {
+      try {
+        addLog(`Testing ${cred.role} credentials...`, 'info');
+        
+        // Test direct credential validation
+        const testResponse = await fetch('/api/test-credentials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: cred.email, password: cred.password })
+        });
+        
+        const testResult = await testResponse.json();
+        
+        if (testResult.success) {
+          addLog(`✅ Direct credential test passed for ${cred.role}`, 'success');
+        } else {
+          addLog(`❌ Direct credential test failed for ${cred.role}: ${testResult.error}`, 'error');
+        }
+        
+        // Test NextAuth credentials sign-in
+        addLog(`Testing NextAuth sign-in for ${cred.role}...`, 'info');
+        
+        const result = await signIn('credentials', {
+          email: cred.email,
+          password: cred.password,
+          redirect: false
+        });
+        
+        if (result?.error) {
+          addLog(`❌ NextAuth credentials failed for ${cred.role}: ${result.error}`, 'error');
+        } else if (result?.ok) {
+          addLog(`✅ NextAuth credentials succeeded for ${cred.role}`, 'success');
+          // Sign out immediately to test the next credential
+          await signOut({ redirect: false });
+        } else {
+          addLog(`⚠️ NextAuth credentials returned unexpected result for ${cred.role}`, 'warning');
+        }
+        
+      } catch (error) {
+        addLog(`❌ Error testing ${cred.role} credentials: ${error.message}`, 'error');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
@@ -150,6 +202,13 @@ export default function TestOAuth() {
                 className="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700"
               >
                 Test Environment
+              </button>
+              
+              <button
+                onClick={testCredentials}
+                className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700"
+              >
+                Test Demo Credentials
               </button>
               
               <button
