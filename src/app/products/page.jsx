@@ -1,27 +1,41 @@
 'use client';
 
 import { useEffect, Suspense } from 'react';
-import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Head from 'next/head';
 import ProductGrid from '@/app/Components/Products/ProductGrid';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 import toast from 'react-hot-toast';
 
 function ProductsContent() {
-  const { data: session, status } = useSession();
+  const { session, user, isAuthenticated, authProvider } = useHybridAuth();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Check if user just logged in (from callback URL or direct navigation after login)
+    // Check if user just logged in
     const isFromLogin = searchParams.get('from') === 'login' || 
                        document.referrer.includes('/login') ||
                        sessionStorage.getItem('justLoggedIn');
 
-    if (session && status === 'authenticated' && isFromLogin) {
-      const firstName = session.user.name?.split(' ')[0] || 'there';
-      toast.success(`Welcome back, ${firstName}! Browse our latest products.`, {
+    const loginMode = sessionStorage.getItem('loginMode');
+
+    if (isAuthenticated && isFromLogin) {
+      const firstName = user?.name?.split(' ')[0] || 'there';
+      let welcomeMessage = `Welcome back, ${firstName}! Browse our latest products.`;
+      let icon = '🛍️';
+      
+      // Customize message based on authentication method
+      if (authProvider === 'demo' || loginMode === 'demo') {
+        welcomeMessage = `Welcome, ${firstName}! You're in demo mode. Browse our products!`;
+        icon = '🎭';
+      } else if (authProvider === 'nextauth' || loginMode === 'nextauth') {
+        welcomeMessage = `Welcome back, ${firstName}! Browse our latest products.`;
+        icon = '🛍️';
+      }
+      
+      toast.success(welcomeMessage, {
         duration: 4000,
-        icon: '🛍️',
+        icon: icon,
         style: {
           background: '#10B981',
           color: '#fff',

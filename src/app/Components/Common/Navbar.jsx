@@ -2,16 +2,17 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 import { Menu, X, ShoppingBag, Home, Package, Sparkles, User, UserPlus, LogOut, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useHybridAuth } from '@/hooks/useHybridAuth';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { session, user, isAuthenticated, authProvider, signOut: hybridSignOut } = useHybridAuth();
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -49,8 +50,14 @@ const Navbar = () => {
       // Set flag for login page to show sign out success toast
       sessionStorage.setItem('justSignedOut', 'true');
       
-      // Sign out without automatic redirect
-      await signOut({ redirect: false });
+      // Handle sign out based on authentication provider
+      if (authProvider === 'nextauth') {
+        // Sign out from NextAuth without automatic redirect
+        await signOut({ redirect: false });
+      } else if (authProvider === 'demo') {
+        // Sign out from demo authentication
+        hybridSignOut();
+      }
       
       toast.dismiss(loadingToast);
       
@@ -115,18 +122,18 @@ const Navbar = () => {
 
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-3">
-            {status === 'loading' ? (
+            {!isAuthenticated ? (
               <div className="w-8 h-8 border-2 border-gray-300 border-t-purple-600 rounded-full animate-spin"></div>
-            ) : session ? (
+            ) : user ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                   className="flex items-center space-x-3 px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-gray-50 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                 >
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {getInitials(session.user.name)}
+                    {getInitials(user.name)}
                   </div>
-                  <span className="hidden lg:block">{session.user.name?.split(' ')[0] || 'User'}</span>
+                  <span className="hidden lg:block">{user.name?.split(' ')[0] || 'User'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
@@ -137,18 +144,18 @@ const Navbar = () => {
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                          {getInitials(session.user.name)}
+                          {getInitials(user.name)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 truncate">
-                            {session.user.name || 'User'}
+                            {user.name || 'User'}
                           </p>
                           <p className="text-xs text-gray-500 truncate">
-                            {session.user.email}
+                            {user.email}
                           </p>
-                          {session.user.role && (
+                          {user.role && (
                             <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
-                              {session.user.role}
+                              {user.role}
                             </span>
                           )}
                         </div>
@@ -166,7 +173,7 @@ const Navbar = () => {
                         <span>Dashboard</span>
                       </Link>
                       
-                      {session.user.role === 'admin' && (
+                      {user.role === 'admin' && (
                         <Link
                           href="/add-item"
                           onClick={() => setIsUserDropdownOpen(false)}
@@ -264,24 +271,24 @@ const Navbar = () => {
           }`}
           style={{ transitionDelay: '300ms' }}
           >
-            {session ? (
+            {user ? (
               <>
                 {/* User Info Mobile */}
                 <div className="px-4 py-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                      {getInitials(session.user.name)}
+                      {getInitials(user.name)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">
-                        {session.user.name || 'User'}
+                        {user.name || 'User'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {session.user.email}
+                        {user.email}
                       </p>
-                      {session.user.role && (
+                      {user.role && (
                         <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
-                          {session.user.role}
+                          {user.role}
                         </span>
                       )}
                     </div>

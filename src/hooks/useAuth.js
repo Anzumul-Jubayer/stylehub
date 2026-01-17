@@ -1,22 +1,25 @@
-import { useSession } from 'next-auth/react';
+import { useHybridAuth } from './useHybridAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export const useAuth = (redirectTo = '/login') => {
-  const { data: session, status } = useSession();
+  const hybridAuth = useHybridAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (status === 'loading') return; // Still loading
-    if (!session) router.push(redirectTo); // Not authenticated
-  }, [session, status, router, redirectTo]);
+    if (hybridAuth.loading) return; // Still loading
+    if (!hybridAuth.isAuthenticated) router.push(redirectTo); // Not authenticated
+  }, [hybridAuth.isAuthenticated, hybridAuth.loading, router, redirectTo]);
 
   return {
-    session,
-    status,
-    isAuthenticated: !!session,
-    isLoading: status === 'loading',
-    user: session?.user
+    session: hybridAuth.session,
+    status: hybridAuth.status,
+    isAuthenticated: hybridAuth.isAuthenticated,
+    isLoading: hybridAuth.loading,
+    user: hybridAuth.user,
+    isAdmin: hybridAuth.isAdmin,
+    authProvider: hybridAuth.authProvider,
+    signOut: hybridAuth.signOut
   };
 };
 

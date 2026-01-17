@@ -53,6 +53,7 @@ function LoginForm() {
     const loadingToast = showToast.loginLoading();
 
     try {
+      // First try NextAuth credentials
       const result = await signIn('credentials', {
         email,
         password,
@@ -60,14 +61,49 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        showToast.dismiss(loadingToast);
-        showToast.loginError();
-        setError('Invalid email or password');
+        // If NextAuth fails, try demo authentication as fallback
+        console.log('NextAuth failed, trying demo authentication...');
+        
+        const demoResponse = await fetch('/api/demo-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, action: 'signin' })
+        });
+
+        const demoResult = await demoResponse.json();
+
+        if (demoResult.success) {
+          // Store demo session in localStorage
+          localStorage.setItem('stylehub_demo_session', JSON.stringify(demoResult.session));
+          
+          // Also set a cookie for middleware
+          document.cookie = `stylehub_demo_auth=${JSON.stringify(demoResult.session)}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+          
+          showToast.dismiss(loadingToast);
+          showToast.loginSuccess('Demo mode');
+          
+          // Set flag for products page to show welcome toast
+          sessionStorage.setItem('justLoggedIn', 'true');
+          sessionStorage.setItem('loginMode', 'demo');
+          
+          // Redirect to products page
+          setTimeout(() => {
+            router.push('/products');
+          }, 1000);
+        } else {
+          showToast.dismiss(loadingToast);
+          showToast.loginError();
+          setError('Invalid email or password');
+        }
       } else {
+        // NextAuth success
         showToast.dismiss(loadingToast);
-        showToast.loginSuccess('there');
+        showToast.loginSuccess('NextAuth');
+        
         // Set flag for products page to show welcome toast
         sessionStorage.setItem('justLoggedIn', 'true');
+        sessionStorage.setItem('loginMode', 'nextauth');
+        
         // Successful login - redirect will be handled by NextAuth callback
         setTimeout(() => {
           router.push('/products');
