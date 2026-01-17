@@ -26,23 +26,51 @@ export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Dashboard - Session status:', status);
+      console.log('Dashboard - Session data:', session);
+    }
+    
     if (status === 'loading') return; // Still loading
-    if (!session) router.push('/login'); // Not authenticated
+    
+    if (!session) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Dashboard - No session, redirecting to login');
+      }
+      // Add a small delay to ensure session loading is complete
+      const timer = setTimeout(() => {
+        router.push('/login');
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Dashboard - User authenticated:', session.user);
+    }
   }, [session, status, router]);
 
+  // Show loading state while session is being determined
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
+  // Show loading state while redirecting
   if (!session) {
-    return null; // Will redirect to login
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
   }
 
   const handleSignOut = async () => {
