@@ -12,7 +12,7 @@ export async function GET() {
         NEXTAUTH_URL: {
           exists: !!process.env.NEXTAUTH_URL,
           value: process.env.NEXTAUTH_URL || 'NOT_SET',
-          isCorrect: process.env.NEXTAUTH_URL === 'https://stylehub-plmi.vercel.app'
+          isCorrect: process.env.NEXTAUTH_URL?.trim() === 'https://stylehub-plmi.vercel.app'
         },
         NEXTAUTH_SECRET: {
           exists: !!process.env.NEXTAUTH_SECRET,
@@ -39,7 +39,7 @@ export async function GET() {
           process.env.GOOGLE_CLIENT_ID && 
           process.env.GOOGLE_CLIENT_SECRET
         ),
-        nextAuthUrlCorrect: process.env.NEXTAUTH_URL === 'https://stylehub-plmi.vercel.app',
+        nextAuthUrlCorrect: process.env.NEXTAUTH_URL?.trim() === 'https://stylehub-plmi.vercel.app',
         secretNotDefault: process.env.NEXTAUTH_SECRET !== 'your-secret-key-here-change-in-production',
         secretLongEnough: (process.env.NEXTAUTH_SECRET?.length || 0) >= 32
       },
