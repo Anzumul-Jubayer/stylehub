@@ -66,3 +66,32 @@
 }
 
 @custom-variant dark (&:where([data-theme=night], [data-theme=night] *));
+/* Dropdown animations */
+@keyframes slideInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: slideInFromTop 0.2s ease-out;
+}
+
+.slide-in-from-top-2 {
+  animation: slideInFromTop 0.2s ease-out;
+}
+
+/* Focus ring improvements */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2;
+}
+
+/* Smooth transitions for dropdowns */
+.dropdown-transition {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}

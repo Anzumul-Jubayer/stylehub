@@ -39,7 +39,7 @@ const Categories = () => {
             </h2>
             <p className="text-gray-500 text-lg">Curated essentials for every wardobe.</p>
           </div>
-          <Link href="/shop" className="hidden md:block text-[#14B8A6] font-semibold hover:underline decoration-2 underline-offset-8 transition-all">
+          <Link href="/products" className="hidden md:block text-[#14B8A6] font-semibold hover:underline decoration-2 underline-offset-8 transition-all">
             View All Categories →
           </Link>
         </div>
@@ -73,9 +73,11 @@ const Categories = () => {
                 <h3 className="text-2xl md:text-4xl font-bold text-white mb-4">
                   {cat.name}
                 </h3>
-                <button className="bg-white text-gray-900 px-8 py-2.5 rounded-full text-sm font-bold opacity-0 translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-[#4F46E5] hover:text-white">
-                  Browse Shop
-                </button>
+                <Link href="/products">
+                  <button className="bg-white text-gray-900 px-8 py-2.5 rounded-full text-sm font-bold opacity-0 translate-y-4 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-[#4F46E5] hover:text-white">
+                    Browse Shop
+                  </button>
+                </Link>
               </div>
             </motion.div>
           ))}

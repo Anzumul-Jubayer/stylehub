@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Autoplay, EffectFade } from 'swiper/modules';
 import { motion } from 'framer-motion';
@@ -88,9 +89,11 @@ const Hero = () => {
                     whileInView={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.5, delay: 0.6 }}
                   >
-                    <button className="bg-[#4F46E5] hover:bg-[#E11D48] text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl">
-                      {slide.buttonText}
-                    </button>
+                    <Link href="/products">
+                      <button className="bg-[#4F46E5] hover:bg-[#E11D48] text-white px-10 py-4 rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-xl">
+                        {slide.buttonText}
+                      </button>
+                    </Link>
                   </motion.div>
                 </div>
               </div>

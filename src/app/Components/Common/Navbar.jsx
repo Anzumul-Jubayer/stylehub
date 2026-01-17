@@ -1,12 +1,32 @@
 "use client";
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu, X, ShoppingBag, Home, Package, Sparkles, User, UserPlus } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
+import { Menu, X, ShoppingBag, Home, Package, Sparkles, User, UserPlus, LogOut, ChevronDown } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const navLinks = [
     { name: 'Home', href: '/', icon: Home },
@@ -19,6 +39,37 @@ const Navbar = () => {
       return pathname === '/';
     }
     return pathname.startsWith(href);
+  };
+
+  const handleSignOut = async () => {
+    setIsUserDropdownOpen(false);
+    const loadingToast = toast.loading('Signing you out...');
+    
+    try {
+      // Set flag for login page to show sign out success toast
+      sessionStorage.setItem('justSignedOut', 'true');
+      
+      // Sign out without automatic redirect
+      await signOut({ redirect: false });
+      
+      toast.dismiss(loadingToast);
+      
+      // Try Next.js router first, fallback to window.location
+      try {
+        router.push('/login');
+      } catch (routerError) {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast);
+      toast.error('Error signing out');
+      sessionStorage.removeItem('justSignedOut');
+    }
+  };
+
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   return (
@@ -64,20 +115,97 @@ const Navbar = () => {
 
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-3">
-            <Link 
-              href="/login" 
-              className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#14B8A6] hover:bg-gray-50 rounded-xl transition-all duration-200"
-            >
-              <User className="w-4 h-4" />
-              <span>Log in</span>
-            </Link>
-            <Link
-              href="/register"
-              className="flex items-center space-x-2 bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-300 shadow-lg shadow-indigo-200 hover:shadow-indigo-300"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Register</span>
-            </Link>
+            {status === 'loading' ? (
+              <div className="w-8 h-8 border-2 border-gray-300 border-t-purple-600 rounded-full animate-spin"></div>
+            ) : session ? (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="flex items-center space-x-3 px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-gray-50 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                >
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                    {getInitials(session.user.name)}
+                  </div>
+                  <span className="hidden lg:block">{session.user.name?.split(' ')[0] || 'User'}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                    {/* User Info */}
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                          {getInitials(session.user.name)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {session.user.name || 'User'}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {session.user.email}
+                          </p>
+                          {session.user.role && (
+                            <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+                              {session.user.role}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="py-1">
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsUserDropdownOpen(false)}
+                        className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-purple-600 transition-colors duration-200"
+                      >
+                        <User className="w-4 h-4" />
+                        <span>Dashboard</span>
+                      </Link>
+                      
+                      {session.user.role === 'admin' && (
+                        <Link
+                          href="/add-item"
+                          onClick={() => setIsUserDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors duration-200"
+                        >
+                          <Package className="w-4 h-4" />
+                          <span>Add Item</span>
+                        </Link>
+                      )}
+                      
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#14B8A6] hover:bg-gray-50 rounded-xl transition-all duration-200"
+                >
+                  <User className="w-4 h-4" />
+                  <span>Log in</span>
+                </Link>
+                <Link
+                  href="/register"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-300 shadow-lg shadow-indigo-200 hover:shadow-indigo-300"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Register</span>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -136,22 +264,69 @@ const Navbar = () => {
           }`}
           style={{ transitionDelay: '300ms' }}
           >
-            <Link 
-              href="/login" 
-              className="flex items-center justify-center space-x-2 py-3 font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-              onClick={() => setIsOpen(false)}
-            >
-              <User className="w-4 h-4" />
-              <span>Log in</span>
-            </Link>
-            <Link 
-              href="/register" 
-              className="flex items-center justify-center space-x-2 py-3 font-semibold text-white bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] rounded-xl hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-200 shadow-lg"
-              onClick={() => setIsOpen(false)}
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Register</span>
-            </Link>
+            {session ? (
+              <>
+                {/* User Info Mobile */}
+                <div className="px-4 py-3 bg-gray-50 rounded-xl">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                      {getInitials(session.user.name)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        {session.user.name || 'User'}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {session.user.email}
+                      </p>
+                      {session.user.role && (
+                        <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+                          {session.user.role}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Link 
+                  href="/dashboard" 
+                  className="flex items-center justify-center space-x-2 py-3 font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    handleSignOut();
+                  }}
+                  className="flex items-center justify-center space-x-2 py-3 font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-all duration-200"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="flex items-center justify-center space-x-2 py-3 font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Log in</span>
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="flex items-center justify-center space-x-2 py-3 font-semibold text-white bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] rounded-xl hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-200 shadow-lg"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Register</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </div>
