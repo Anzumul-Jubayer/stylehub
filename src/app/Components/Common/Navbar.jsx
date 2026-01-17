@@ -182,7 +182,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-1 items-center">
+          <div className="hidden lg:flex space-x-1 items-center">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = isActiveRoute(link.href);
@@ -204,7 +204,34 @@ const Navbar = () => {
             })}
           </div>
 
-          {/* Auth Buttons (Desktop) */}
+          {/* Tablet Navigation - Icon Only */}
+          <div className="hidden md:flex lg:hidden space-x-1 items-center">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = isActiveRoute(link.href);
+              
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className={`flex items-center justify-center p-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative ${
+                    isActive
+                      ? 'bg-[#4F46E5] text-white shadow-lg'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-[#4F46E5]'
+                  }`}
+                  title={link.name}
+                >
+                  <Icon className="w-5 h-5" />
+                  {/* Tooltip */}
+                  <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none">
+                    {link.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Auth Buttons (Desktop & Tablet) */}
           <div className="hidden md:flex items-center space-x-3">
             {isAuthenticated ? (
               <div className="relative" ref={dropdownRef}>
@@ -215,7 +242,7 @@ const Navbar = () => {
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                     {getInitials(user?.name)}
                   </div>
-                  <span className="hidden lg:block">{user?.name?.split(' ')[0] || 'User'}</span>
+                  <span className="hidden xl:block">{user?.name?.split(' ')[0] || 'User'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 

@@ -64,33 +64,55 @@ function LoginForm() {
         // If NextAuth fails, try demo authentication as fallback
         console.log('NextAuth failed, trying demo authentication...');
         
-        const demoResponse = await fetch('/api/demo-auth', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, action: 'signin' })
-        });
+        try {
+          const demoResponse = await fetch('/api/demo-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, action: 'signin' })
+          });
 
-        const demoResult = await demoResponse.json();
+          if (!demoResponse.ok) {
+            throw new Error(`Demo auth API failed: ${demoResponse.status}`);
+          }
 
-        if (demoResult.success) {
-          // Store demo session in localStorage
-          localStorage.setItem('stylehub_demo_session', JSON.stringify(demoResult.session));
-          
-          // Also set a cookie for middleware
-          document.cookie = `stylehub_demo_auth=${JSON.stringify(demoResult.session)}; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
-          
-          showToast.dismiss(loadingToast);
-          showToast.loginSuccess('Demo mode');
-          
-          // Set flag for products page to show welcome toast
-          sessionStorage.setItem('justLoggedIn', 'true');
-          sessionStorage.setItem('loginMode', 'demo');
-          
-          // Redirect to products page
-          setTimeout(() => {
-            router.push('/products');
-          }, 1000);
-        } else {
+          const demoResult = await demoResponse.json();
+
+          if (demoResult.success) {
+            // Store demo session in localStorage
+            localStorage.setItem('stylehub_demo_session', JSON.stringify(demoResult.session));
+            
+            // Set a more robust cookie for middleware with proper encoding
+            const cookieValue = encodeURIComponent(JSON.stringify(demoResult.session));
+            const cookieOptions = [
+              `stylehub_demo_auth=${cookieValue}`,
+              'path=/',
+              `max-age=${30 * 24 * 60 * 60}`,
+              'SameSite=Lax'
+            ];
+            
+            // Add Secure flag in production
+            if (window.location.protocol === 'https:') {
+              cookieOptions.push('Secure');
+            }
+            
+            document.cookie = cookieOptions.join('; ');
+            
+            showToast.dismiss(loadingToast);
+            showToast.loginSuccess('Demo mode');
+            
+            // Set flag for products page to show welcome toast
+            sessionStorage.setItem('justLoggedIn', 'true');
+            sessionStorage.setItem('loginMode', 'demo');
+            
+            // Force a page reload to ensure middleware picks up the new session
+            setTimeout(() => {
+              window.location.href = '/products';
+            }, 1000);
+          } else {
+            throw new Error(demoResult.error || 'Demo authentication failed');
+          }
+        } catch (demoError) {
+          console.error('Demo authentication error:', demoError);
           showToast.dismiss(loadingToast);
           showToast.loginError();
           setError('Invalid email or password');

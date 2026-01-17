@@ -58,14 +58,27 @@ export const useHybridAuth = () => {
   const isAdmin = user?.role === 'admin';
   const authProvider = nextAuthSession ? 'nextauth' : demoSession ? 'demo' : null;
 
-  const signOut = () => {
+  const signOut = async () => {
     // Clear demo session
     if (demoSession) {
       localStorage.removeItem(DEMO_SESSION_KEY);
-      // Clear demo auth cookie
-      if (typeof document !== 'undefined') {
-        document.cookie = 'stylehub_demo_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      
+      // Clear demo auth cookie by calling the API
+      try {
+        await fetch('/api/demo-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'signout' })
+        });
+      } catch (error) {
+        console.error('Error clearing demo session:', error);
       }
+      
+      // Also clear cookie client-side as fallback
+      if (typeof document !== 'undefined') {
+        document.cookie = 'stylehub_demo_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      }
+      
       setDemoSession(null);
     }
     

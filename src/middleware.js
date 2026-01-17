@@ -39,7 +39,9 @@ export async function middleware(request) {
     }
   } else if (demoSession) {
     try {
-      const sessionData = JSON.parse(demoSession.value);
+      // Handle URL-encoded cookie values
+      const decodedValue = decodeURIComponent(demoSession.value);
+      const sessionData = JSON.parse(decodedValue);
       const sessionExpiry = new Date(sessionData.expires);
       
       if (sessionExpiry > new Date()) {
@@ -48,9 +50,18 @@ export async function middleware(request) {
         if (process.env.NODE_ENV === 'development') {
           console.log('Demo authenticated:', { role: userRole, pathname });
         }
+      } else {
+        // Session expired, clear the cookie
+        const response = NextResponse.next();
+        response.cookies.delete('stylehub_demo_auth');
+        return response;
       }
     } catch (error) {
       console.error('Error parsing demo session:', error);
+      // Clear invalid cookie
+      const response = NextResponse.next();
+      response.cookies.delete('stylehub_demo_auth');
+      return response;
     }
   }
 
