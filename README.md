@@ -82,22 +82,6 @@ cd stylehub
 npm install
 ```
 
-### 3. Environment Configuration
-Create `.env.local` file in root directory:
-
-```env
-# MongoDB Configuration
-MONGODB_URI="your-mongodb-connection-string"
-DB_NAME="stylehub_db"
-
-# NextAuth Configuration
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key-here"
-
-# Google OAuth (Optional)
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-```
 
 ### 4. Database Setup
 The application will automatically connect to MongoDB. Ensure your database contains a `products` collection with sample data.
