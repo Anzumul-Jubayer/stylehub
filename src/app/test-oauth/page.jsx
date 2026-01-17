@@ -67,20 +67,42 @@ export default function TestOAuth() {
     addLog('Testing environment variables...', 'info');
     
     try {
-      // Try to fetch debug info from our API
-      const response = await fetch('/api/debug/env');
+      // Try to fetch debug info from our NextAuth debug API
+      const response = await fetch('/api/debug/nextauth');
       if (response.ok) {
-        const envInfo = await response.json();
-        addLog(`Server environment info:`, 'info');
-        addLog(`NODE_ENV: ${envInfo.NODE_ENV}`, 'info');
-        addLog(`NEXTAUTH_URL: ${envInfo.NEXTAUTH_URL}`, 'info');
-        addLog(`NEXTAUTH_SECRET: ${envInfo.NEXTAUTH_SECRET}`, 'info');
-        addLog(`GOOGLE_CLIENT_ID: ${envInfo.GOOGLE_CLIENT_ID}`, 'info');
-        addLog(`GOOGLE_CLIENT_SECRET: ${envInfo.GOOGLE_CLIENT_SECRET}`, 'info');
-        addLog(`VERCEL_URL: ${envInfo.VERCEL_URL}`, 'info');
-        addLog(`VERCEL_ENV: ${envInfo.VERCEL_ENV}`, 'info');
+        const debugInfo = await response.json();
+        addLog(`🔍 NextAuth Debug Info:`, 'info');
+        addLog(`Environment: ${debugInfo.environment.NODE_ENV} (Vercel: ${debugInfo.environment.VERCEL_ENV})`, 'info');
+        addLog(`NEXTAUTH_URL: ${debugInfo.nextauth.NEXTAUTH_URL}`, debugInfo.nextauth.NEXTAUTH_URL === 'NOT_SET' ? 'error' : 'success');
+        addLog(`NEXTAUTH_SECRET: ${debugInfo.nextauth.NEXTAUTH_SECRET}`, debugInfo.nextauth.NEXTAUTH_SECRET === 'NOT_SET' ? 'error' : 'success');
+        addLog(`Google Client ID: ${debugInfo.google.GOOGLE_CLIENT_ID}`, debugInfo.google.GOOGLE_CLIENT_ID === 'NOT_SET' ? 'error' : 'success');
+        addLog(`Google Client Secret: ${debugInfo.google.GOOGLE_CLIENT_SECRET}`, debugInfo.google.GOOGLE_CLIENT_SECRET === 'NOT_SET' ? 'error' : 'success');
+        
+        // Show warnings
+        if (debugInfo.warnings.length > 0) {
+          addLog(`⚠️ Warnings found:`, 'warning');
+          debugInfo.warnings.forEach(warning => {
+            addLog(`  - ${warning}`, 'warning');
+          });
+        } else {
+          addLog(`✅ No configuration warnings`, 'success');
+        }
+        
+        // Show credential test results
+        addLog(`🔐 Credential Test Results:`, 'info');
+        debugInfo.credentialTest.testResults.forEach(test => {
+          addLog(`  ${test.email}: ${test.valid ? '✅ VALID' : '❌ INVALID'}`, test.valid ? 'success' : 'error');
+        });
+        
+        // Show computed URLs
+        addLog(`🌐 Computed URLs:`, 'info');
+        addLog(`  Credentials callback: ${debugInfo.computed.expectedCallbackUrl}`, 'info');
+        addLog(`  Google callback: ${debugInfo.computed.expectedGoogleCallback}`, 'info');
+        
       } else {
         addLog(`Debug API returned ${response.status}`, 'warning');
+        const errorText = await response.text();
+        addLog(`Error: ${errorText}`, 'error');
       }
     } catch (error) {
       addLog(`Failed to fetch debug info: ${error.message}`, 'error');
