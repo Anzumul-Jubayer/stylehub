@@ -63,16 +63,28 @@ export default function TestOAuth() {
     await signOut({ callbackUrl: '/login' });
   };
 
-  const testEnvironmentVars = () => {
+  const testEnvironmentVars = async () => {
     addLog('Testing environment variables...', 'info');
     
-    // This will only work on client-side for public env vars
-    const nextAuthUrl = process.env.NEXT_PUBLIC_NEXTAUTH_URL || 'Not accessible from client';
-    addLog(`NEXTAUTH_URL: ${nextAuthUrl}`, 'info');
-    
-    // Check if we're in production
-    const isProduction = process.env.NODE_ENV === 'production';
-    addLog(`Environment: ${isProduction ? 'Production' : 'Development'}`, 'info');
+    try {
+      // Try to fetch debug info from our API
+      const response = await fetch('/api/debug/env');
+      if (response.ok) {
+        const envInfo = await response.json();
+        addLog(`Server environment info:`, 'info');
+        addLog(`NODE_ENV: ${envInfo.NODE_ENV}`, 'info');
+        addLog(`NEXTAUTH_URL: ${envInfo.NEXTAUTH_URL}`, 'info');
+        addLog(`NEXTAUTH_SECRET: ${envInfo.NEXTAUTH_SECRET}`, 'info');
+        addLog(`GOOGLE_CLIENT_ID: ${envInfo.GOOGLE_CLIENT_ID}`, 'info');
+        addLog(`GOOGLE_CLIENT_SECRET: ${envInfo.GOOGLE_CLIENT_SECRET}`, 'info');
+        addLog(`VERCEL_URL: ${envInfo.VERCEL_URL}`, 'info');
+        addLog(`VERCEL_ENV: ${envInfo.VERCEL_ENV}`, 'info');
+      } else {
+        addLog(`Debug API returned ${response.status}`, 'warning');
+      }
+    } catch (error) {
+      addLog(`Failed to fetch debug info: ${error.message}`, 'error');
+    }
     
     // Check current URL
     addLog(`Current URL: ${window.location.origin}`, 'info');
