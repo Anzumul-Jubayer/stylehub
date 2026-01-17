@@ -7,12 +7,87 @@ import { Menu, X, ShoppingBag, Home, Package, Sparkles, User, UserPlus, LogOut, 
 import toast from 'react-hot-toast';
 import { useHybridAuth } from '@/hooks/useHybridAuth';
 
+// Loading Spinner Component
+const LoadingSpinner = ({ size = 'w-6 h-6', className = '' }) => (
+  <div className={`${size} ${className}`}>
+    <div className="relative">
+      <div className="w-full h-full border-2 border-gray-200 rounded-full"></div>
+      <div className="absolute top-0 left-0 w-full h-full border-2 border-[#4F46E5] border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  </div>
+);
+
+// Auth Buttons Component for Desktop
+const AuthButtons = ({ isSigningOut }) => {
+  if (isSigningOut) {
+    return (
+      <div className="flex items-center space-x-3">
+        <LoadingSpinner size="w-6 h-6" />
+        <span className="text-sm font-medium text-gray-600">Signing out...</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Link 
+        href="/login" 
+        className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#14B8A6] hover:bg-gray-50 rounded-xl transition-all duration-200"
+      >
+        <User className="w-4 h-4" />
+        <span>Log in</span>
+      </Link>
+      <Link
+        href="/register"
+        className="flex items-center space-x-2 bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-300 shadow-lg shadow-indigo-200 hover:shadow-indigo-300"
+      >
+        <UserPlus className="w-4 h-4" />
+        <span>Register</span>
+      </Link>
+    </>
+  );
+};
+
+// Auth Buttons Component for Mobile
+const MobileAuthButtons = ({ isSigningOut, setIsOpen }) => {
+  if (isSigningOut) {
+    return (
+      <div className="flex items-center justify-center space-x-3 py-4">
+        <LoadingSpinner size="w-6 h-6" />
+        <span className="text-sm font-medium text-gray-600">Signing out...</span>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Link 
+        href="/login" 
+        className="flex items-center justify-center space-x-2 py-3 font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+        onClick={() => setIsOpen(false)}
+      >
+        <User className="w-4 h-4" />
+        <span>Log in</span>
+      </Link>
+      <Link 
+        href="/register" 
+        className="flex items-center justify-center space-x-2 py-3 font-semibold text-white bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] rounded-xl hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-200 shadow-lg"
+        onClick={() => setIsOpen(false)}
+      >
+        <UserPlus className="w-4 h-4" />
+        <span>Register</span>
+      </Link>
+    </>
+  );
+};
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { session, user, isAuthenticated, authProvider, signOut: hybridSignOut } = useHybridAuth();
+  const { user, isAuthenticated, authProvider, signOut: hybridSignOut } = useHybridAuth();
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -44,6 +119,8 @@ const Navbar = () => {
 
   const handleSignOut = async () => {
     setIsUserDropdownOpen(false);
+    setIsSigningOut(true);
+    
     const loadingToast = toast.loading('Signing you out...');
     
     try {
@@ -61,16 +138,23 @@ const Navbar = () => {
       
       toast.dismiss(loadingToast);
       
-      // Try Next.js router first, fallback to window.location
-      try {
-        router.push('/login');
-      } catch (routerError) {
-        window.location.href = '/login';
-      }
+      // Keep the loading state for 2.5 seconds to show spinner
+      setTimeout(() => {
+        setIsSigningOut(false);
+        
+        // Try Next.js router first, fallback to window.location
+        try {
+          router.push('/login');
+        } catch (routerError) {
+          window.location.href = '/login';
+        }
+      }, 2500);
+      
     } catch (error) {
       toast.dismiss(loadingToast);
       toast.error('Error signing out');
       sessionStorage.removeItem('justSignedOut');
+      setIsSigningOut(false);
     }
   };
 
@@ -107,10 +191,10 @@ const Navbar = () => {
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                     isActive
-                      ? 'bg-[#4F46E5] text-white shadow-lg shadow-indigo-200'
-                      : 'text-gray-600 hover:text-[#4F46E5] hover:bg-gray-50'
+                      ? 'bg-[#4F46E5] text-white shadow-lg'
+                      : 'text-gray-700 hover:bg-gray-50 hover:text-[#4F46E5]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -122,38 +206,35 @@ const Navbar = () => {
 
           {/* Auth Buttons (Desktop) */}
           <div className="hidden md:flex items-center space-x-3">
-            {!isAuthenticated ? (
-              <div className="w-8 h-8 border-2 border-gray-300 border-t-purple-600 rounded-full animate-spin"></div>
-            ) : user ? (
+            {isAuthenticated ? (
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
-                  className="flex items-center space-x-3 px-4 py-2 text-sm font-medium text-gray-700 hover:text-purple-600 hover:bg-gray-50 rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                  className="flex items-center space-x-2 px-3 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-all duration-200"
                 >
                   <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                    {getInitials(user.name)}
+                    {getInitials(user?.name)}
                   </div>
-                  <span className="hidden lg:block">{user.name?.split(' ')[0] || 'User'}</span>
+                  <span className="hidden lg:block">{user?.name?.split(' ')[0] || 'User'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Dropdown Menu */}
+                {/* User Dropdown */}
                 {isUserDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
-                    {/* User Info */}
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                          {getInitials(user.name)}
+                          {getInitials(user?.name)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-900 truncate">
-                            {user.name || 'User'}
+                            {user?.name || 'User'}
                           </p>
                           <p className="text-xs text-gray-500 truncate">
-                            {user.email}
+                            {user?.email}
                           </p>
-                          {user.role && (
+                          {user?.role && (
                             <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
                               {user.role}
                             </span>
@@ -161,57 +242,41 @@ const Navbar = () => {
                         </div>
                       </div>
                     </div>
-
-                    {/* Menu Items */}
+                    
                     <div className="py-1">
                       <Link
                         href="/dashboard"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                         onClick={() => setIsUserDropdownOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-purple-600 transition-colors duration-200"
                       >
-                        <User className="w-4 h-4" />
-                        <span>Dashboard</span>
+                        <User className="w-4 h-4 mr-3" />
+                        Dashboard
                       </Link>
                       
-                      {user.role === 'admin' && (
+                      {user?.role === 'admin' && (
                         <Link
                           href="/add-item"
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                           onClick={() => setIsUserDropdownOpen(false)}
-                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors duration-200"
                         >
-                          <Package className="w-4 h-4" />
-                          <span>Add Item</span>
+                          <UserPlus className="w-4 h-4 mr-3" />
+                          Add Item
                         </Link>
                       )}
                       
                       <button
                         onClick={handleSignOut}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
+                        className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200"
                       >
-                        <LogOut className="w-4 h-4" />
-                        <span>Sign Out</span>
+                        <LogOut className="w-4 h-4 mr-3" />
+                        Sign Out
                       </button>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <>
-                <Link 
-                  href="/login" 
-                  className="flex items-center space-x-2 px-4 py-2 text-sm font-semibold text-gray-700 hover:text-[#14B8A6] hover:bg-gray-50 rounded-xl transition-all duration-200"
-                >
-                  <User className="w-4 h-4" />
-                  <span>Log in</span>
-                </Link>
-                <Link
-                  href="/register"
-                  className="flex items-center space-x-2 bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-300 shadow-lg shadow-indigo-200 hover:shadow-indigo-300"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Register</span>
-                </Link>
-              </>
+              <AuthButtons isSigningOut={isSigningOut} />
             )}
           </div>
 
@@ -271,22 +336,22 @@ const Navbar = () => {
           }`}
           style={{ transitionDelay: '300ms' }}
           >
-            {user ? (
+            {isAuthenticated ? (
               <>
                 {/* User Info Mobile */}
                 <div className="px-4 py-3 bg-gray-50 rounded-xl">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
-                      {getInitials(user.name)}
+                      {getInitials(user?.name)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">
-                        {user.name || 'User'}
+                        {user?.name || 'User'}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {user.email}
+                        {user?.email}
                       </p>
-                      {user.role && (
+                      {user?.role && (
                         <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
                           {user.role}
                         </span>
@@ -303,6 +368,18 @@ const Navbar = () => {
                   <User className="w-4 h-4" />
                   <span>Dashboard</span>
                 </Link>
+                
+                {user?.role === 'admin' && (
+                  <Link 
+                    href="/add-item" 
+                    className="flex items-center justify-center space-x-2 py-3 font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Add Item</span>
+                  </Link>
+                )}
+                
                 <button 
                   onClick={() => {
                     setIsOpen(false);
@@ -315,24 +392,7 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
-              <>
-                <Link 
-                  href="/login" 
-                  className="flex items-center justify-center space-x-2 py-3 font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <User className="w-4 h-4" />
-                  <span>Log in</span>
-                </Link>
-                <Link 
-                  href="/register" 
-                  className="flex items-center justify-center space-x-2 py-3 font-semibold text-white bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] rounded-xl hover:from-[#4338CA] hover:to-[#6D28D9] transition-all duration-200 shadow-lg"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <UserPlus className="w-4 h-4" />
-                  <span>Register</span>
-                </Link>
-              </>
+              <MobileAuthButtons isSigningOut={isSigningOut} setIsOpen={setIsOpen} />
             )}
           </div>
         </div>
