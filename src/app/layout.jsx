@@ -1,6 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ConditionalLayout from "./components/ConditionalLayout";
+import ConditionalLayout from "./Components/ConditionalLayout";
 import SessionProvider from "./providers/SessionProvider";
 import ToastProvider from "./providers/ToastProvider";
 
