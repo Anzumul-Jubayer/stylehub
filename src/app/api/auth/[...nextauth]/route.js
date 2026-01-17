@@ -21,7 +21,7 @@ const mockUsers = [
 ];
 
 const authOptions = {
-  debug: process.env.NODE_ENV === 'development',
+  debug: true, // Enable debug for production troubleshooting
   providers: [
     // Credentials Provider for mock login
     CredentialsProvider({
@@ -58,7 +58,7 @@ const authOptions = {
       }
     }),
 
-    // Google Provider with enhanced configuration
+    // Google Provider with simplified configuration
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -67,15 +67,6 @@ const authOptions = {
           prompt: "consent",
           access_type: "offline",
           response_type: "code"
-        }
-      },
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-          role: 'user' // Default role for Google OAuth users
         }
       }
     })
@@ -87,7 +78,7 @@ const authOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account }) {
       try {
         if (user) {
           token.role = user.role || 'user';
@@ -116,19 +107,27 @@ const authOptions = {
       }
     },
 
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user, account }) {
       try {
+        console.log('SignIn callback triggered:', { 
+          provider: account?.provider, 
+          userEmail: user?.email,
+          accountType: account?.type 
+        });
+
         // Allow all credential logins (handled by authorize function)
         if (account?.provider === 'credentials') {
+          console.log('Credentials login successful');
           return true;
         }
         
         // Allow Google OAuth logins
         if (account?.provider === 'google') {
-          // Additional validation can be added here
+          console.log('Google OAuth login successful:', user?.email);
           return true;
         }
         
+        console.log('Unknown provider:', account?.provider);
         return false;
       } catch (error) {
         console.error('SignIn callback error:', error);
@@ -138,27 +137,23 @@ const authOptions = {
 
     async redirect({ url, baseUrl }) {
       try {
-        // Handle both development and production URLs
-        const productionUrl = process.env.NEXTAUTH_URL || baseUrl;
+        console.log('Redirect callback:', { url, baseUrl, NEXTAUTH_URL: process.env.NEXTAUTH_URL });
         
-        // If it's a relative URL, make it absolute
+        // Use NEXTAUTH_URL if available, otherwise fallback to baseUrl
+        const redirectBase = process.env.NEXTAUTH_URL || baseUrl;
+        
+        // If it's a relative URL, make it absolute and redirect to products
         if (url.startsWith('/')) {
-          return `${productionUrl}/products`;
+          return `${redirectBase}/products`;
         }
         
         // If it's the same origin, allow it
-        try {
-          const urlObj = new URL(url);
-          const baseUrlObj = new URL(productionUrl);
-          if (urlObj.origin === baseUrlObj.origin) {
-            return url;
-          }
-        } catch (urlError) {
-          console.error('URL parsing error:', urlError);
+        if (url.startsWith(redirectBase)) {
+          return url;
         }
         
         // Default redirect to products page
-        return `${productionUrl}/products`;
+        return `${redirectBase}/products`;
       } catch (error) {
         console.error('Redirect callback error:', error);
         return `${baseUrl}/products`;
@@ -181,6 +176,7 @@ const authOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined,
       },
     },
     callbackUrl: {
@@ -191,6 +187,7 @@ const authOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined,
       },
     },
     csrfToken: {
@@ -210,7 +207,7 @@ const authOptions = {
   useSecureCookies: process.env.NODE_ENV === 'production',
   secret: process.env.NEXTAUTH_SECRET,
 
-  // Add error handling
+  // Consolidated event handling
   events: {
     async error(message) {
       console.error('NextAuth error event:', message);
@@ -220,10 +217,16 @@ const authOptions = {
     },
     async signOut(message) {
       console.log('NextAuth signOut event:', message);
+    },
+    async createUser(message) {
+      console.log('NextAuth createUser event:', message);
+    },
+    async session(message) {
+      console.log('NextAuth session event:', message);
     }
   },
 
-  // Enable debug logging in production for troubleshooting
+  // Enhanced logging for production debugging
   logger: {
     error(code, metadata) {
       console.error('NextAuth error:', code, metadata);
@@ -232,7 +235,7 @@ const authOptions = {
       console.warn('NextAuth warning:', code);
     },
     debug(code, metadata) {
-      if (process.env.NODE_ENV === 'development') {
+      if (process.env.NODE_ENV === 'production') {
         console.log('NextAuth debug:', code, metadata);
       }
     }

@@ -87,49 +87,31 @@ function LoginForm() {
     const loadingToast = showToast.googleLoading();
     
     try {
+      console.log('Initiating Google OAuth sign-in...');
+      
       // Set flag for products page to show welcome toast
       sessionStorage.setItem('justLoggedIn', 'true');
       
-      // For Google OAuth, we let NextAuth handle the redirect
-      const result = await signIn('google', {
-        callbackUrl: '/products',
-        redirect: false
+      // Use a more direct approach for Google OAuth
+      await signIn('google', {
+        callbackUrl: '/products'
       });
       
-      if (result?.error) {
-        showToast.dismiss(loadingToast);
-        console.error('Google OAuth error:', result.error);
-        
-        // Handle specific OAuth errors
-        if (result.error === 'OAuthCallback') {
-          toast.error('Google authentication failed. Please check your configuration.', {
-            duration: 5000,
-            style: {
-              background: '#EF4444',
-              color: '#fff',
-              borderRadius: '12px',
-              padding: '16px',
-            },
-          });
-        } else {
-          showToast.googleError();
-        }
-        setError('Google authentication failed. Please try again.');
-      } else if (result?.url) {
-        // Successful OAuth initiation
-        showToast.dismiss(loadingToast);
-        window.location.href = result.url;
-      } else {
-        // Fallback - let NextAuth handle the redirect
-        showToast.dismiss(loadingToast);
-        await signIn('google', {
-          callbackUrl: '/products'
-        });
-      }
     } catch (error) {
       showToast.dismiss(loadingToast);
       console.error('Google sign-in error:', error);
-      showToast.googleError();
+      
+      // Show specific error message
+      toast.error('Google authentication failed. Please try again.', {
+        duration: 5000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+          borderRadius: '12px',
+          padding: '16px',
+        },
+      });
+      
       setError('An error occurred during Google sign-in. Please try again.');
     }
   };
