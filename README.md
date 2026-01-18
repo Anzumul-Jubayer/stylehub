@@ -11,9 +11,7 @@ A full-stack e-commerce clothing store built with Next.js 15, featuring modern U
 
 **Production URL:** [https://stylehub-plmi.vercel.app](https://stylehub-plmi.vercel.app)
 
-### Demo Credentials
-- **Admin Account:** `admin@stylehub.com` / `admin123`
-- **User Account:** `user@stylehub.com` / `user123`
+
 
 ## Project Description
 
